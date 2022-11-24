@@ -122,9 +122,9 @@ void dprintf2(const char *fmt, ...)
 
 void setup() 
 {
-  Serial.begin(9600); //baud rate makes no difference on 32u4
+  //Serial.begin(9600); //baud rate makes no difference on 32u4
 
-  Serial1.begin(4800); //for GPS
+  Serial.begin(4800); //for GPS
 
   myDebug.begin(4800); //debug UART
 
@@ -154,21 +154,21 @@ void setup()
   digitalWrite(GPS_ENABLE_PIN,1);
   delay(1000);
   //turn off VTG
-  Serial1.println("$PSRF103,05,00,00,01*21\r");
+  Serial.println("$PSRF103,05,00,00,01*21\r");
   //turn off RMC
-  Serial1.println("$PSRF103,04,00,00,01*20\r");
+  Serial.println("$PSRF103,04,00,00,01*20\r");
 
   //turn off GSV
-  Serial1.println("$PSRF103,03,00,00,01*27\r");
+  Serial.println("$PSRF103,03,00,00,01*27\r");
 
   //turn off GSA
-  Serial1.println("$PSRF103,02,00,00,01*26\r");
+  Serial.println("$PSRF103,02,00,00,01*26\r");
 
   //turn off GLL
-  Serial1.println("$PSRF103,01,00,00,01*25\r");
+  Serial.println("$PSRF103,01,00,00,01*25\r");
 
   //turn off GGA
-  Serial1.println("$PSRF103,00,00,00,01*24\r");
+  Serial.println("$PSRF103,00,00,00,01*24\r");
   delay(1000);
 
   //leave GPS on to get its initial fix
@@ -240,14 +240,14 @@ void readGPS() {
 
   while(fix_age == TinyGPS::GPS_INVALID_AGE||fix_age>3000) //make sure the GPS has a fix, this might cause a wait the first time, but it should be quick any subsequent time
   {
-    Serial1.println("$PSRF103,04,01,00,01*21\r");
+    Serial.println("$PSRF103,04,01,00,01*21\r");
     dprintf(DEBUG_MINOR,"NMEA string: ");
     unsigned long start = millis();
     while(millis()<start+2000)
     {
-      if(Serial1.available())
+      if(Serial.available())
       {
-        int c = Serial1.read();
+        int c = Serial.read();
         gps.encode(c);
         if(DEBUG_THRESHOLD>=DEBUG_MINOR)
         {
@@ -284,14 +284,6 @@ void readGPS() {
   else
   {
     
-    /*Serial.println(date);
-
-    Serial.print("time = ");
-    Serial.println(time);
-
-    Serial.print("fix_age = ");
-    Serial.println(fix_age);*/
-
     say(DEBUG_IMPORTANT,"Fix Valid");
     dprintf(DEBUG_IMPORTANT,"lat=%ld lon=%ld\r\n",(long)(state.lat*1000),(long)(state.lon*1000));
 
@@ -463,7 +455,7 @@ void loop()
         myDebug.println(running_err);
       }
 
-      transmit_data();
+      //transmit_data();
       last_telemetry=millis();
     }
 

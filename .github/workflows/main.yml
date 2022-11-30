@@ -14,6 +14,6 @@ jobs:
           export PATH=$(pwd)/bin
           arduino-cli config init
           arduino-cli core update-index
-          arduino-cli core install arduino:avr:uno
+          arduino-cli core install arduino:avr
           arduino-cli lib install OneWire Servo Time TinyGPS
 

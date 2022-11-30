@@ -11,4 +11,5 @@ jobs:
       - name: Install Arudino cli
         run: |
           curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          ls bin
+          export PATH=$(pwd)/bin
+          arduino-cli

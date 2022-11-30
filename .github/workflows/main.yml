@@ -12,4 +12,8 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
           export PATH=$(pwd)/bin
-          arduino-cli
+          arduino-cli config init
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr:uno
+          arduino-cli lib install OneWire Servo Time TinyGPS
+

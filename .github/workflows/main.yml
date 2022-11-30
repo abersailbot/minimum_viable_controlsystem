@@ -1,0 +1,14 @@
+name: Build code
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:  
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install Arudino cli
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          ls bin

@@ -19,5 +19,7 @@ jobs:
       - name: Build Code
         run: |
           export PATH=$(pwd)/bin
+          pwd
+          ls
           arduino-cli compile -b arduino:avr:uno example-control-system.ino
         

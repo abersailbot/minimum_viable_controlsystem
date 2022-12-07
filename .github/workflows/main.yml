@@ -21,7 +21,7 @@ jobs:
           arduino-cli lib install OneWire Servo Time TinyGPS
       - name: Build Code
         run: |
-          export PATH=$(pwd)/bin
+          export PATH=$(pwd)/bin:$PATH
           pwd
           ls
           arduino-cli compile -b arduino:avr:uno example-control-system.ino

@@ -23,5 +23,6 @@ jobs:
         run: |
           export PATH=$(pwd)/bin:$PATH
           arduino-cli lib list
+          ls /home/runner/Arduino/libraries/Time
           arduino-cli compile -b arduino:avr:uno
 

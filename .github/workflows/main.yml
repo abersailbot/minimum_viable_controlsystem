@@ -22,7 +22,6 @@ jobs:
       - name: Build Code
         run: |
           export PATH=$(pwd)/bin:$PATH
-          pwd
-          ls
+          arduino-cli lib list
           arduino-cli compile -b arduino:avr:uno
 

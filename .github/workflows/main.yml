@@ -14,7 +14,7 @@ jobs:
       - name: Install Arudino cli
         run: |
           curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          export PATH=$(pwd)/bin
+          export PATH=$(pwd)/bin:$PATH
           arduino-cli config init
           arduino-cli core update-index
           arduino-cli core install arduino:avr
@@ -23,6 +23,6 @@ jobs:
         run: |
           export PATH=$(pwd)/bin
           pwd
-          find .
+          ls
           arduino-cli compile -b arduino:avr:uno example-control-system.ino
         

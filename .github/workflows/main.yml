@@ -8,7 +8,7 @@ jobs:
     steps:  
       - name: Setup Dependencies
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install coreutils
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install findutils
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Install Arudino cli
@@ -23,6 +23,6 @@ jobs:
         run: |
           export PATH=$(pwd)/bin
           pwd
-          ls
+          find .
           arduino-cli compile -b arduino:avr:uno example-control-system.ino
         

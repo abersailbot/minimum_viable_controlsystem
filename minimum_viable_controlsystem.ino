@@ -17,9 +17,10 @@
 */
 
 #include <stdio.h>
-#include <Servo.h>
+//#include <Servo.h>
+#include <ESP32Servo.h>
 #include <Wire.h>
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
 #include <math.h>
 #include "Time.h"
 #include "TinyGPS.h"
@@ -35,7 +36,9 @@
 #define deg2rad(x) x * M_PI/180
 
 Servo rudderServo; // create servo object to control a servo
-SoftwareSerial myDebug(7, 8);
+
+//SoftwareSerial myDebug(7, 8);
+HardwareSerial myDebug(1);
 
 TinyGPS gps;
 
@@ -96,27 +99,17 @@ static void say(byte level, char* msg)
 //debugging printf that prepends "Debug:" to everything and can be easily turned off
 void dprintf(byte level, const char *fmt, ...)
 {      
-  
+  char outbuf[1024];
+
   if(level<=DEBUG_THRESHOLD)
   {
     printf("Debug%d: [Ctrl] ",level);
     va_list ap;
     va_start(ap, fmt);
-    
-    vprintf(fmt, ap);
+    vsnprintf(outbuf,1024,fmt, ap);
+    myDebug.print(outbuf);
     va_end(ap);
   }
-}
-
-void dprintf2(const char *fmt, ...)
-{      
-  
-    //printf("Debug%d: [Ctrl] ",level);
-    va_list ap;
-    va_start(ap, fmt);
-    
-    printf(fmt, ap);
-    va_end(ap);
 }
 
 
@@ -126,13 +119,14 @@ void setup()
 
   Serial.begin(4800); //for GPS
 
-  myDebug.begin(4800); //debug UART
+  myDebug.begin(4800, SERIAL_8N1, 6,7); //debug UART on GPIO 6 and 7
 
   say(DEBUG_CRITICAL,"Control system start up");
 
   //required for printf  
-  fdev_setup_stream (&uartout, uart_putchar, NULL, _FDEV_SETUP_WRITE);
-  stdout = &uartout ;
+  //but not on ESP32
+  //fdev_setup_stream (&uartout, uart_putchar, NULL, _FDEV_SETUP_WRITE);
+  //stdout = &uartout ;
   dprintf(DEBUG_IMPORTANT,"Printf configured \r\n");
 
   delay(5000);
@@ -224,7 +218,6 @@ int readCompass() {
   
   //dprintf(DEBUG_IMPORTANT,"Heading: %d Roll: %d Pitch: %d\r\n",state.heading,state.roll,state.pitch);
   //printf("heading=%d\r\n",heading);
-  //dprintf2("heading=%d\r\n",heading);
 
   delay(100);
   

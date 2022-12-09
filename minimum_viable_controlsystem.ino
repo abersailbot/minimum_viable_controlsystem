@@ -22,7 +22,8 @@
 #include <Wire.h>
 #include <HardwareSerial.h>
 #include <math.h>
-#include "Time.h"
+//Time.h became TimeLib.h as of version 1.6.1
+#include "TimeLib.h"
 #include "TinyGPS.h"
 
 #define HMC6343_ADDRESS 0x19

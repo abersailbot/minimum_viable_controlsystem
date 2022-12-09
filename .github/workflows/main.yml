@@ -23,6 +23,4 @@ jobs:
       - name: Build Code
         run: |
           export PATH=$(pwd)/bin:$PATH
-          pwd
-          ls
           arduino-cli compile -b esp32:esp32:esp32c

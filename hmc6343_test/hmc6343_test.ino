@@ -18,17 +18,31 @@
 
 #include <stdio.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+#include <AsyncUDP.h>
 
 #define HMC6343_ADDRESS 0x19
 #define HMC6343_HEADING_REG 0x50
 
+const char *ssid = "esp32";
+
+AsyncUDP udp;
 
 void setup() 
 {
   Serial.begin(115200); //for GPS
   Serial.println("Setting up I2C...");
   Wire.begin(); // Initialise i2c for compass
+
+  Serial.println("setting up WiFi");
+  WiFi.softAP(ssid);
+  IPAddress myIP = WiFi.softAPIP();
+
   Serial.println("Done");
+
+
 }
 
 //reads heading from HMC6343 compass
@@ -63,5 +77,8 @@ int readCompass() {
 void loop()
 {
     int heading = readCompass();
-    Serial.printf("Heading=%d\n",heading);
+    String data = "Heading=" + String(heading) + "\n";
+    Serial.print(data);
+    //send data as UDP broadcast
+    udp.broadcastTo(data.c_str(),1234);
 }

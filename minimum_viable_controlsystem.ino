@@ -14,7 +14,14 @@
  Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Copyright Colin Sauze
+
+libraries required:
+timelib
+esp32servo
+tinygps
 */
+
+
 
 #include <stdio.h>
 //#include <Servo.h>
@@ -22,6 +29,12 @@
 #include <Wire.h>
 #include <HardwareSerial.h>
 #include <math.h>
+
+#include <WiFi.h>
+#include <WiFiAP.h>
+#include <AsyncUDP.h>
+
+
 //Time.h became TimeLib.h as of version 1.6.1
 #include "TimeLib.h"
 #include "TinyGPS.h"
@@ -59,6 +72,8 @@ TinyGPS gps;
 
 #define DEBUG_THRESHOLD DEBUG_IMPORTANT //set to 0 to show no debugging messages
 
+const char *ssid = "boat";
+AsyncUDP udp;
 byte ledState=0;
 
   struct Data{
@@ -168,19 +183,25 @@ void setup()
 
   //leave GPS on to get its initial fix
   //digitalWrite(GPS_ENABLE_PIN,0);
+
+  //setup WiFi
+  say(DEBUG_IMPORTANT,"setting up WiFi");
+  WiFi.softAP(ssid);
+  IPAddress myIP = WiFi.softAPIP();
+
   say(DEBUG_IMPORTANT,"Done");
 
   say(DEBUG_IMPORTANT,"Setup Complete\n");
 }
 
 //computes an NMEA checksum
-byte compute_checksum(byte *data,byte length)
+byte compute_checksum(char *data,byte length)
 {                
   byte computed_checksum=0;
 
   for (byte i = 0; i < length; i++)
   {
-    computed_checksum = (byte)computed_checksum ^ data[i];
+    computed_checksum = (byte)computed_checksum ^ (byte)data[i];
   }
 
   return computed_checksum;
@@ -371,7 +392,8 @@ void loop()
 
     readCompass();
 
-    //state.wind_dir=getTrueWind();
+    //state.wind_dir=getTrueWind();        {
+
     //no wind sensor, so just use a fixed wind direction
     state.wind_dir=270;
 
@@ -429,11 +451,65 @@ void loop()
 
     if(last_telemetry+(TELEMETRY_INTERVAL*1000)<millis())
     {
-      dprintf(DEBUG_CRITICAL,"time=%ld hdg=%d hdg_err=%d roll=%d pitch=%d truewind=%d relwind=%d sail=%d rudder=%d wp_num=%d wp_hdg=%d wp_dist=%ld ",now(),state.heading,hdg_err,state.roll,state.pitch,state.wind_dir,relwind,state.sail,state.rudder,wp_num,wp_hdg,(long)wp_dist);
+      char msgbuf[255];
+      char nmeadata[80];
+      char checksum;
+
+      //generate key value telemetry packet
+      snprintf(msgbuf,254,"time=%ld lat=%.4f lon=%.4f hdg=%d hdg_err=%d roll=%d pitch=%d rudder=%d wp_num=%d wp_hdg=%d wp_dist=%ld ",now(),state.lat,state.lon,state.heading,hdg_err,state.roll,state.pitch,state.rudder,wp_num,wp_hdg,(long)wp_dist);
+      say(DEBUG_CRITICAL,msgbuf);
+      udp.broadcastTo(msgbuf,1234);
+
+      //generate compass NMEA string
+      snprintf(nmeadata,79,"HDM,%d.0,M",state.heading);
+      checksum=compute_checksum(nmeadata,strlen(nmeadata));
+      snprintf(msgbuf,254,"$%s*%X\n",nmeadata,checksum);
+      say(DEBUG_CRITICAL, msgbuf);
+      udp.broadcastTo(msgbuf,10000);
+
+      //generate GPS NMEA string
+      char timestr[7];
+      char hemNS;
+      char hemEW;
+      char latstr[10]; //DDMM.MMMM0
+      char lonstr[11]; //DDDMM.MMMM0
+      int degrees;
+      float minutes;
+      //generate time
+      snprintf(timestr,6,"%2d%2d%2d",hour(),minute(),second());
+
+      //generate lat/lon
+      degrees = abs((int) state.lat);
+      minutes = (fabs(state.lat) - (float)degrees) * 60.0;
+      snprintf(latstr,9,"%2d%2.4f",degrees,minutes);
+      //get the hemisphere north/south
+      if (state.lat>0) {
+        hemNS = 'N';
+      }
+      else {
+        hemNS = 'S';
+      } 
+
+      degrees = abs((int) state.lon);
+      minutes = (fabs(state.lon) - (float)degrees) * 60.0;
+      snprintf(lonstr,10,"%3d%2.4f",degrees,minutes);
+      //get the hemisphere east/east
+      if (state.lon>0) {
+        hemEW = 'E';
+      }
+      else {
+        hemEW = 'W';
+      } 
+
+      //$GPGLL,LATMM.MMMM,N/S,LONMM.MMMM,E/W,HHMMSS,A,*SUM
+      snprintf(nmeadata,79,"GPGLL,%s,%c,%s,%c,%s,A%",latstr,hemNS,lonstr,hemEW,timestr);
+      checksum=compute_checksum(nmeadata,strlen(nmeadata));
+      snprintf(msgbuf,254,"$%s*%X\n",nmeadata,checksum);
       
-      //time=181734082 hdg=-14836 hdg_err=9217 roll=-22526 pitch=24182 truewind=-25261 relwind=27648 sail=-6656 rudder=-7937 wp_hdg=2768 wp_dist=-284423467 lat=52.41648 lon=-4.06522 wplat=52.40000 wplon=-4.40000 running_err=966.57
-      
-      // time=1398700112 hdg=158 hdg_err=107 roll=-26 pitch=-32 truewind=302 relwind=144 sail=4 rudder=5 Debug1: [Ctrl] wp_hdg=265 wp_dist=22842 lat=52.41666 lon=-4.06445 wplat=52.40000 wplon=-4.40000 running_err=963.96
+      say(DEBUG_CRITICAL, msgbuf);
+      //send to UDP port 10000
+      udp.broadcastTo(msgbuf,10000);
+    
 
       if(DEBUG_THRESHOLD>=DEBUG_CRITICAL)
       {
@@ -449,7 +525,6 @@ void loop()
         myDebug.println(running_err);
       }
 
-      //transmit_data();
       last_telemetry=millis();
     }
 
